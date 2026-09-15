@@ -3,8 +3,17 @@ import Photobooth from './components/Photobooth';
 
 export default function App() {
   return (
-    <main className="w-full min-h-screen bg-[#06090e] text-slate-100 flex flex-col">
-      <Photobooth />
+    <main
+      className="relative w-full min-h-screen bg-cover bg-center bg-no-repeat overflow-x-hidden flex flex-col items-center justify-between"
+      style={{ backgroundImage: "url('/background.jpg')" }}
+    >
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-sky-900/10 pointer-events-none" />
+
+      {/* Konten Utama Photobooth */}
+      <div className="relative z-10 w-full min-h-screen flex flex-col justify-between">
+        <Photobooth />
+      </div>
     </main>
   );
 }

@@ -1,51 +1,88 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import Webcam from 'react-webcam';
-import { Camera, Terminal, Activity } from 'lucide-react';
+import { Camera, Sparkles, ChevronRight, Check, Wand2 } from 'lucide-react';
 import { TechStripPreview } from './TechStripPreview';
 
+// Setting resolusi tinggi 
 const videoConstraints = {
-  width: { ideal: 1080 },
-  height: { ideal: 1440 },
+  width: { ideal: 1920 },
+  height: { ideal: 1080 },
   facingMode: "user"
 };
 
+// Preset filter 
+const FILTERS = [
+  { id: 'normal', name: 'Normal', filterStyle: 'none' },
+  { id: 'hd-vibrant', name: 'HD Toy Story', filterStyle: 'contrast(108%) saturate(125%) brightness(103%)' },
+  { id: 'warm-soft', name: 'Warm Cozy', filterStyle: 'contrast(105%) brightness(105%) sepia(15%) saturate(115%)' },
+  { id: 'clean-sharp', name: 'Crisp Clear', filterStyle: 'contrast(115%) brightness(102%)' },
+];
+
+const THEMES = [
+  {
+    id: 'buzz',
+    name: 'Buzz Lightyear',
+    edition: 'Buzz Edition',
+    accentColor: 'border-amber-400 text-amber-500',
+    btnBg: 'bg-amber-400 hover:bg-amber-300 text-slate-950',
+    totalShots: 4,
+    thumbnail: '/frames/buzz.png',
+  },
+  {
+    id: 'alien',
+    name: 'Little Green Men',
+    edition: 'Alien Edition',
+    accentColor: 'border-lime-400 text-lime-600',
+    btnBg: 'bg-lime-400 hover:bg-lime-300 text-slate-950',
+    totalShots: 5,
+    thumbnail: '/frames/alien.png',
+  }
+];
+
 export default function Photobooth() {
   const webcamRef = useRef(null);
+  const [step, setStep] = useState('select');
+  const [selectedThemeId, setSelectedThemeId] = useState('buzz');
+  const [selectedFilter, setSelectedFilter] = useState(FILTERS[1]); 
   const [photos, setPhotos] = useState([]);
   const [countdown, setCountdown] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [currentSlot, setCurrentSlot] = useState(0);
-  const [timeString, setTimeString] = useState('');
 
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTimeString(now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0').slice(0, 2));
-    };
-    const timer = setInterval(updateTime, 50);
-    return () => clearInterval(timer);
-  }, []);
+  const currentTheme = THEMES.find((t) => t.id === selectedThemeId) || THEMES[0];
 
   const captureSingle = useCallback(() => {
-    if (webcamRef.current) {
-      return webcamRef.current.getScreenshot();
+    if (!webcamRef.current) return null;
+
+    const canvas = webcamRef.current.getCanvas();
+    if (!canvas) return null;
+
+    if (selectedFilter.filterStyle !== 'none') {
+      const filteredCanvas = document.createElement('canvas');
+      filteredCanvas.width = canvas.width;
+      filteredCanvas.height = canvas.height;
+      const ctx = filteredCanvas.getContext('2d');
+      ctx.filter = selectedFilter.filterStyle;
+      ctx.drawImage(canvas, 0, 0);
+      return filteredCanvas.toDataURL('image/jpeg', 0.95);
     }
-    return null;
-  }, [webcamRef]);
+
+    return webcamRef.current.getScreenshot();
+  }, [webcamRef, selectedFilter]);
 
   const startSession = async () => {
     setPhotos([]);
     setIsCapturing(true);
 
     const captured = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < currentTheme.totalShots; i++) {
       setCurrentSlot(i + 1);
       for (let c = 3; c > 0; c--) {
         setCountdown(c);
         await new Promise((r) => setTimeout(r, 1000));
       }
-      setCountdown("SNAP!");
-      await new Promise((r) => setTimeout(r, 300));
+      setCountdown("CHEESE!");
+      await new Promise((r) => setTimeout(r, 400));
 
       const shot = captureSingle();
       if (shot) {
@@ -54,139 +91,221 @@ export default function Photobooth() {
       }
       setCountdown(null);
 
-      if (i < 2) await new Promise((r) => setTimeout(r, 1000));
+      if (i < currentTheme.totalShots - 1) {
+        await new Promise((r) => setTimeout(r, 1200));
+      }
     }
 
     setCurrentSlot(0);
     setIsCapturing(false);
+    setStep('preview');
+  };
+
+  const resetAll = () => {
+    setPhotos([]);
+    setStep('select');
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col justify-between p-3 sm:p-5 font-mono select-none">
-      <header className="w-full flex items-center justify-between border-b border-cyan-500/20 pb-2.5 mb-3 text-xs shrink-0">
+    <div className="w-full min-h-screen flex flex-col justify-between p-4 sm:p-6 select-none text-slate-800 backdrop-blur-[1px]">
+      <header className="w-full flex items-center justify-between border-b-2 border-white/40 pb-3 mb-2 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-          <span className="text-cyan-400 font-bold tracking-wider flex items-center gap-1.5 text-xs sm:text-sm">
-            <Terminal size={15} /> CYBER_BOOTH
+          <div className="bg-amber-400 text-slate-900 font-black px-2.5 py-0.5 rounded text-xs tracking-wider border-2 border-amber-500 shadow-sm">
+            TOY BOOTH
+          </div>
+          <span className="text-white font-extrabold tracking-wide text-sm drop-shadow-sm flex items-center gap-1.5">
+            Andy's Room 
           </span>
-          <span className="text-slate-600 hidden sm:inline">// V2.0</span>
         </div>
         
-        <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-cyan-400 font-mono text-[11px] sm:text-xs tracking-wider">
-            {timeString || "00:00:00"}
-          </span>
-          <span className="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 text-[9px] sm:text-[10px] font-bold">
-            ONLINE
-          </span>
+        <div className="text-white/90 text-xs font-bold bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30">
+          {step === 'select' && "Step 1: Choose Frame"}
+          {step === 'capture' && `Step 2: Take ${currentTheme.totalShots} Shots`}
+          {step === 'preview' && "Step 3: Save Result"}
         </div>
       </header>
 
-      {photos.length < 3 ? (
-        <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-8 w-full max-w-6xl mx-auto my-auto">
-          <div className="relative w-full max-w-[420px] lg:max-w-[460px] aspect-[3/4] rounded-xl overflow-hidden bg-slate-950 border-2 border-cyan-500/40 shadow-[0_0_30px_rgba(0,240,255,0.12)] flex items-center justify-center shrink-0">
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              videoConstraints={videoConstraints}
-              className="w-full h-full object-cover"
-              mirrored={true}
-            />
-
-            {isCapturing && (
-              <div className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#00f0ff] animate-[bounce_2s_infinite] pointer-events-none z-20" />
-            )}
-
-            <div className="absolute inset-3 pointer-events-none z-10 flex flex-col justify-between">
-              <div className="flex justify-between items-start">
-                <div className="w-5 h-5 border-t-2 border-l-2 border-cyan-400" />
-                <span className="text-[10px] text-cyan-400 font-bold bg-black/60 px-1 rounded flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
-                </span>
-                <div className="w-5 h-5 border-t-2 border-r-2 border-cyan-400" />
-              </div>
-
-              <div className="self-center w-8 h-8 border border-cyan-500/30 rounded-full flex items-center justify-center">
-                <div className="w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_6px_#00f0ff]" />
-              </div>
-
-              <div className="flex justify-between items-end">
-                <div className="w-5 h-5 border-b-2 border-l-2 border-cyan-400" />
-                <span className="text-[9px] text-cyan-400/80 bg-black/60 px-1 rounded">
-                  TARGET: LOCKED
-                </span>
-                <div className="w-5 h-5 border-b-2 border-r-2 border-cyan-400" />
-              </div>
-            </div>
-
-            {countdown && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/65 backdrop-blur-xs">
-                <span className="text-7xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-cyan-200 to-cyan-500 drop-shadow-[0_0_25px_#00f0ff] animate-pulse">
-                  {countdown}
-                </span>
-                <span className="text-xs uppercase tracking-widest text-cyan-300 mt-2 font-bold">
-                  Pose #{currentSlot}
-                </span>
-              </div>
-            )}
+      {step === 'select' && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 max-w-4xl mx-auto my-auto w-full">
+          <div className="text-center">
+            <h1 className="text-2xl sm:text-3xl font-black text-white drop-shadow-md">
+              Pilih Desain Photostrip Kamu
+            </h1>
+            <p className="text-white/80 text-xs sm:text-sm mt-1">
+              Setiap template memiliki tata letak polaroid khusus
+            </p>
           </div>
 
-          <div className="w-full max-w-[420px] lg:max-w-[240px] flex flex-col gap-3 bg-slate-900/40 border border-slate-800 p-3 sm:p-4 rounded-xl backdrop-blur-sm shrink-0">
-            <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-2">
-              <span className="flex items-center gap-1.5">
-                <Activity size={13} /> Sequence Slots
-              </span>
-              <span className="text-slate-400 text-[10px]">{photos.length}/3 Done</span>
-            </div>
-
-            <div className="grid grid-cols-3 lg:grid-cols-1 gap-2">
-              {[0, 1, 2].map((idx) => {
-                const img = photos[idx];
-                const isActive = currentSlot === idx + 1;
-
-                return (
-                  <div
-                    key={idx}
-                    className={`relative rounded-lg overflow-hidden border transition-all h-16 sm:h-20 lg:h-24 flex items-center justify-center ${
-                      isActive
-                        ? "border-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.3)] bg-cyan-950/30"
-                        : img
-                        ? "border-slate-700 bg-slate-950"
-                        : "border-slate-800 border-dashed bg-slate-950/40 text-slate-600"
-                    }`}
-                  >
-                    {img ? (
-                      <img src={img} alt={`Slot ${idx + 1}`} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-[10px] tracking-wider font-mono flex flex-col items-center">
-                        <span>#0{idx + 1}</span>
-                        {isActive && <span className="text-[8px] text-cyan-400 animate-pulse">REC</span>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-xl">
+            {THEMES.map((theme) => {
+              const isSelected = theme.id === selectedThemeId;
+              return (
+                <div
+                  key={theme.id}
+                  onClick={() => setSelectedThemeId(theme.id)}
+                  className={`cursor-pointer group relative bg-white/70 backdrop-blur-md rounded-2xl p-4 border-4 transition-all duration-200 flex flex-col items-center gap-3 shadow-lg ${
+                    isSelected
+                      ? `${theme.accentColor} scale-102 ring-4 ring-white/60`
+                      : 'border-white/80 hover:border-white'
+                  }`}
+                >
+                  <div className="relative w-36 h-56 rounded-xl overflow-hidden shadow-inner bg-slate-900 flex items-center justify-center">
+                    <img
+                      src={theme.thumbnail}
+                      alt={theme.name}
+                      className="w-full h-full object-contain"
+                    />
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 bg-amber-400 text-slate-900 p-1 rounded-full shadow-md">
+                        <Check size={14} strokeWidth={3} />
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className="text-center">
+                    <h3 className="font-extrabold text-sm text-slate-900">{theme.edition}</h3>
+                    <span className="text-[11px] font-bold text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full inline-block mt-1">
+                      {theme.totalShots} Poses
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      ) : (
-        <div className="flex-1 flex items-center justify-center py-4 overflow-y-auto">
-          <TechStripPreview photos={photos} onRetake={() => setPhotos([])} />
+
+          <button
+            onClick={() => setStep('capture')}
+            className={`px-8 py-3.5 ${currentTheme.btnBg} font-black text-sm uppercase tracking-wider rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex items-center gap-2 border-2 border-white transition-all active:scale-95`}
+          >
+            Lanjut ke Kamera <ChevronRight size={18} />
+          </button>
         </div>
       )}
 
-      {photos.length < 3 && (
-        <footer className="w-full flex flex-col items-center justify-center gap-1.5 shrink-0 pt-3 pb-2">
-          <button
-            onClick={startSession}
-            disabled={isCapturing}
-            className="w-full max-w-[420px] sm:w-auto px-8 py-3.5 bg-cyan-400 hover:bg-cyan-300 disabled:bg-slate-800 text-slate-950 font-black tracking-wider uppercase text-xs sm:text-sm rounded-xl shadow-[0_0_25px_rgba(0,240,255,0.35)] disabled:shadow-none transition-all active:scale-95 flex items-center justify-center gap-2.5 disabled:text-slate-500"
-          >
-            <Camera size={18} />
-            {isCapturing ? `CAPTURING POSE ${currentSlot}/3...` : "START SEQUENCE (3 SHOTS)"}
-          </button>
-          <span className="text-[10px] text-slate-500 text-center">Auto countdown 3 detik tiap jepretan</span>
+      {step === 'capture' && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 w-full max-w-5xl mx-auto my-auto">
+          
+          {/* Pilihan Filter Real-time */}
+          <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm">
+            <span className="text-[11px] font-extrabold text-sky-900 flex items-center gap-1">
+              <Wand2 size={13} /> Filter:
+            </span>
+            <div className="flex gap-1.5">
+              {FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setSelectedFilter(f)}
+                  className={`px-3 py-0.5 rounded-full text-[11px] font-bold transition-all ${
+                    selectedFilter.id === f.id
+                      ? 'bg-amber-400 text-slate-950 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 bg-white/50'
+                  }`}
+                >
+                  {f.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-6 w-full">
+            {/* Viewport Kamera */}
+            <div className="relative w-full max-w-[480px] aspect-[4/3] rounded-3xl overflow-hidden bg-white p-2.5 border-4 border-white shadow-[0_12px_35px_rgba(0,0,0,0.15)] flex items-center justify-center shrink-0">
+              <div className="w-full h-full rounded-2xl overflow-hidden relative bg-slate-900">
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={videoConstraints}
+                  className="w-full h-full object-cover transition-all duration-300"
+                  style={{ filter: selectedFilter.filterStyle }}
+                  mirrored={true}
+                />
+
+                <div className="absolute inset-3 pointer-events-none border-2 border-dashed border-white/40 rounded-xl" />
+
+                {countdown && (
+                  <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-sky-900/50 backdrop-blur-xs">
+                    <span className="text-6xl sm:text-7xl font-black text-amber-300 drop-shadow-[0_4px_10px_rgba(0,0,0,0.4)] animate-bounce">
+                      {countdown}
+                    </span>
+                    <span className="text-xs uppercase tracking-widest text-white mt-3 font-extrabold bg-red-500 px-3 py-1 rounded-full shadow">
+                      Pose {currentSlot} / {currentTheme.totalShots}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Slot Preview */}
+            <div className="w-full max-w-[480px] lg:max-w-[200px] flex flex-col gap-2 bg-white/60 backdrop-blur-md border-2 border-white p-3.5 rounded-2xl shadow-md shrink-0">
+              <div className="text-xs font-extrabold text-sky-900 uppercase tracking-wider flex items-center justify-between border-b border-sky-200 pb-2">
+                <span>{currentTheme.name}</span>
+                <span className="text-xs font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">
+                  {photos.length}/{currentTheme.totalShots}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-5 lg:grid-cols-2 gap-2">
+                {Array.from({ length: currentTheme.totalShots }).map((_, idx) => {
+                  const img = photos[idx];
+                  const isActive = currentSlot === idx + 1;
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square flex items-center justify-center ${
+                        isActive
+                          ? "border-amber-400 ring-2 ring-amber-300 bg-amber-50"
+                          : img
+                          ? "border-white bg-slate-900 shadow-sm"
+                          : "border-sky-300/60 border-dashed bg-white/40 text-sky-700"
+                      }`}
+                    >
+                      {img ? (
+                        <img src={img} alt={`Pose ${idx + 1}`} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[11px] font-black">{idx + 1}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 'preview' && (
+        <div className="flex-1 flex items-center justify-center py-2 overflow-y-auto">
+          <TechStripPreview
+            photos={photos}
+            selectedTheme={selectedThemeId}
+            onRetake={resetAll}
+          />
+        </div>
+      )}
+
+      {step === 'capture' && (
+        <footer className="w-full flex flex-col items-center justify-center gap-2 shrink-0 pt-2 pb-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setStep('select')}
+              disabled={isCapturing}
+              className="px-5 py-3.5 bg-white text-slate-700 font-bold text-xs uppercase rounded-full shadow border-2 border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+            >
+              Ganti Frame
+            </button>
+            <button
+              onClick={startSession}
+              disabled={isCapturing}
+              className={`px-8 py-3.5 ${currentTheme.btnBg} font-black tracking-wider uppercase text-xs sm:text-sm rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all active:scale-95 flex items-center gap-2.5 border-2 border-white disabled:opacity-50`}
+            >
+              <Camera size={18} />
+              {isCapturing 
+                ? `Capturing Pose ${currentSlot}/${currentTheme.totalShots}...` 
+                : `Mulai Foto (Auto ${currentTheme.totalShots}X)`}
+            </button>
+          </div>
         </footer>
       )}
     </div>
