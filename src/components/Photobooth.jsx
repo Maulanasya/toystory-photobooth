@@ -17,7 +17,6 @@ export default function Photobooth() {
   const [currentSlot, setCurrentSlot] = useState(0);
   const [timeString, setTimeString] = useState('');
 
-  // Jam digital real-time
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -43,10 +42,10 @@ export default function Photobooth() {
       setCurrentSlot(i + 1);
       for (let c = 3; c > 0; c--) {
         setCountdown(c);
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1000));
       }
       setCountdown("SNAP!");
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 300));
 
       const shot = captureSingle();
       if (shot) {
@@ -55,7 +54,7 @@ export default function Photobooth() {
       }
       setCountdown(null);
 
-      if (i < 2) await new Promise(r => setTimeout(r, 1000));
+      if (i < 2) await new Promise((r) => setTimeout(r, 1000));
     }
 
     setCurrentSlot(0);
@@ -64,14 +63,13 @@ export default function Photobooth() {
 
   return (
     <div className="w-full min-h-screen flex flex-col justify-between p-3 sm:p-5 font-mono select-none">
-      
-      {/* Top Cyber Status Bar (Responsive Header) */}
       <header className="w-full flex items-center justify-between border-b border-cyan-500/20 pb-2.5 mb-3 text-xs shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-cyan-400" />
+          <div className="h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
           <span className="text-cyan-400 font-bold tracking-wider flex items-center gap-1.5 text-xs sm:text-sm">
-             CYBER_BOOTH
+            <Terminal size={15} /> CYBER_BOOTH
           </span>
+          <span className="text-slate-600 hidden sm:inline">// V2.0</span>
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4">
@@ -84,11 +82,8 @@ export default function Photobooth() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       {photos.length < 3 ? (
         <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-8 w-full max-w-6xl mx-auto my-auto">
-          
-          {/* Viewfinder Container */}
           <div className="relative w-full max-w-[420px] lg:max-w-[460px] aspect-[3/4] rounded-xl overflow-hidden bg-slate-950 border-2 border-cyan-500/40 shadow-[0_0_30px_rgba(0,240,255,0.12)] flex items-center justify-center shrink-0">
             <Webcam
               audio={false}
@@ -99,14 +94,11 @@ export default function Photobooth() {
               mirrored={true}
             />
 
-            {/* Laser Scanning Animation */}
             {isCapturing && (
               <div className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#00f0ff] animate-[bounce_2s_infinite] pointer-events-none z-20" />
             )}
 
-            {/* Viewfinder HUD Overlays */}
             <div className="absolute inset-3 pointer-events-none z-10 flex flex-col justify-between">
-              {/* Top Corners */}
               <div className="flex justify-between items-start">
                 <div className="w-5 h-5 border-t-2 border-l-2 border-cyan-400" />
                 <span className="text-[10px] text-cyan-400 font-bold bg-black/60 px-1 rounded flex items-center gap-1">
@@ -115,12 +107,10 @@ export default function Photobooth() {
                 <div className="w-5 h-5 border-t-2 border-r-2 border-cyan-400" />
               </div>
 
-              {/* Center Crosshair */}
               <div className="self-center w-8 h-8 border border-cyan-500/30 rounded-full flex items-center justify-center">
                 <div className="w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_6px_#00f0ff]" />
               </div>
 
-              {/* Bottom Corners */}
               <div className="flex justify-between items-end">
                 <div className="w-5 h-5 border-b-2 border-l-2 border-cyan-400" />
                 <span className="text-[9px] text-cyan-400/80 bg-black/60 px-1 rounded">
@@ -130,7 +120,6 @@ export default function Photobooth() {
               </div>
             </div>
 
-            {/* Countdown Overlay */}
             {countdown && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/65 backdrop-blur-xs">
                 <span className="text-7xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-cyan-200 to-cyan-500 drop-shadow-[0_0_25px_#00f0ff] animate-pulse">
@@ -143,7 +132,6 @@ export default function Photobooth() {
             )}
           </div>
 
-          {/* Slots & Status Panel */}
           <div className="w-full max-w-[420px] lg:max-w-[240px] flex flex-col gap-3 bg-slate-900/40 border border-slate-800 p-3 sm:p-4 rounded-xl backdrop-blur-sm shrink-0">
             <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800 pb-2">
               <span className="flex items-center gap-1.5">
@@ -152,7 +140,6 @@ export default function Photobooth() {
               <span className="text-slate-400 text-[10px]">{photos.length}/3 Done</span>
             </div>
 
-            {/* Preview Slot (Grid 3 kolom di mobile, 1 kolom di desktop) */}
             <div className="grid grid-cols-3 lg:grid-cols-1 gap-2">
               {[0, 1, 2].map((idx) => {
                 const img = photos[idx];
@@ -182,16 +169,13 @@ export default function Photobooth() {
               })}
             </div>
           </div>
-
         </div>
       ) : (
-        /* Preview & Download Area */
         <div className="flex-1 flex items-center justify-center py-4 overflow-y-auto">
           <TechStripPreview photos={photos} onRetake={() => setPhotos([])} />
         </div>
       )}
 
-      {/* Bottom Shutter Action Button */}
       {photos.length < 3 && (
         <footer className="w-full flex flex-col items-center justify-center gap-1.5 shrink-0 pt-3 pb-2">
           <button
@@ -205,7 +189,6 @@ export default function Photobooth() {
           <span className="text-[10px] text-slate-500 text-center">Auto countdown 3 detik tiap jepretan</span>
         </footer>
       )}
-
     </div>
   );
 }

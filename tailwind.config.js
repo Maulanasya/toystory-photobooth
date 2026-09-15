@@ -15,7 +15,7 @@ export default {
         }
       },
       fontFamily: {
-        mono: ['Courier New', 'monospace', 'JetBrains Mono'], // Font bergaya terminal/tech
+        mono: ['Courier New', 'monospace', 'JetBrains Mono'], 
       }
     },
   },
