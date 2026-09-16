@@ -90,21 +90,23 @@ export function TechStripPreview({ photos, selectedTheme, onRetakeAll, onRetakeS
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onRetakeAll}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-700 hover:bg-slate-50 border-2 border-slate-200 rounded-full text-xs uppercase font-bold shadow-md transition-all active:scale-95"
-          >
-            <RefreshCw size={14} /> Foto Ulang Semua
-          </button>
+        <div className="relative z-20 flex items-center gap-3">
+  <button
+    type="button"
+    onClick={onRetakeAll}
+    className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-700 hover:bg-slate-50 border-2 border-slate-200 rounded-full text-xs uppercase font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+  >
+    <RefreshCw size={14} /> Foto Ulang Semua
+  </button>
 
-          <button
-            onClick={handleDownload}
-            className="flex items-center gap-2 px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-xs uppercase rounded-full shadow-[0_4px_14px_rgba(251,191,36,0.5)] transition-all hover:scale-105 active:scale-95"
-          >
-            <Download size={14} /> Simpan (.PNG)
-          </button>
-        </div>
+  <button
+    type="button"
+    onClick={handleDownload}
+    className="flex items-center gap-2 px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-xs uppercase rounded-full shadow-[0_4px_14px_rgba(251,191,36,0.5)] transition-all hover:scale-105 active:scale-95 cursor-pointer"
+  >
+    <Download size={14} /> Simpan (.PNG)
+  </button>
+</div>
       </div>
 
       {/* Panel Retake Foto Satuan */}

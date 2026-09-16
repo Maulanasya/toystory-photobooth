@@ -205,11 +205,12 @@ export default function Photobooth() {
           </div>
 
           <button
-            onClick={() => setStep('capture')}
-            className={`px-8 py-3.5 ${currentTheme.btnBg} font-black text-sm uppercase tracking-wider rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex items-center gap-2 border-2 border-white transition-all active:scale-95`}
-          >
-            Lanjut ke Kamera <ChevronRight size={18} />
-          </button>
+  type="button"
+  onClick={() => setStep('capture')}
+  className={`relative z-30 cursor-pointer px-8 py-3.5 ${currentTheme.btnBg} font-black text-sm uppercase tracking-wider rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex items-center gap-2 border-2 border-white transition-all hover:scale-105 active:scale-95`}
+>
+  Lanjut ke Kamera <ChevronRight size={18} />
+</button>
         </div>
       )}
 
