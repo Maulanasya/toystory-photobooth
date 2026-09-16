@@ -3,14 +3,12 @@ import Webcam from 'react-webcam';
 import { Camera, Sparkles, ChevronRight, Check, Wand2 } from 'lucide-react';
 import { TechStripPreview } from './TechStripPreview';
 
-// Setting resolusi tinggi 
 const videoConstraints = {
   width: { ideal: 1920 },
   height: { ideal: 1080 },
   facingMode: "user"
 };
 
-// Preset filter 
 const FILTERS = [
   { id: 'normal', name: 'Normal', filterStyle: 'none' },
   { id: 'hd-vibrant', name: 'HD Toy Story', filterStyle: 'contrast(108%) saturate(125%) brightness(103%)' },
@@ -43,17 +41,17 @@ export default function Photobooth() {
   const webcamRef = useRef(null);
   const [step, setStep] = useState('select');
   const [selectedThemeId, setSelectedThemeId] = useState('buzz');
-  const [selectedFilter, setSelectedFilter] = useState(FILTERS[1]); 
+  const [selectedFilter, setSelectedFilter] = useState(FILTERS[1]);
   const [photos, setPhotos] = useState([]);
   const [countdown, setCountdown] = useState(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [currentSlot, setCurrentSlot] = useState(0);
+  const [singleRetakeIndex, setSingleRetakeIndex] = useState(null);
 
   const currentTheme = THEMES.find((t) => t.id === selectedThemeId) || THEMES[0];
 
   const captureSingle = useCallback(() => {
     if (!webcamRef.current) return null;
-
     const canvas = webcamRef.current.getCanvas();
     if (!canvas) return null;
 
@@ -101,8 +99,41 @@ export default function Photobooth() {
     setStep('preview');
   };
 
+  const handleRetakeSingle = (index) => {
+    setSingleRetakeIndex(index);
+    setStep('capture');
+  };
+
+  const executeSingleCapture = async () => {
+    setIsCapturing(true);
+    setCurrentSlot(singleRetakeIndex + 1);
+
+    for (let c = 3; c > 0; c--) {
+      setCountdown(c);
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    setCountdown("CHEESE!");
+    await new Promise((r) => setTimeout(r, 400));
+
+    const newShot = captureSingle();
+    if (newShot) {
+      setPhotos((prev) => {
+        const updated = [...prev];
+        updated[singleRetakeIndex] = newShot;
+        return updated;
+      });
+    }
+
+    setCountdown(null);
+    setIsCapturing(false);
+    setSingleRetakeIndex(null);
+    setCurrentSlot(0);
+    setStep('preview');
+  };
+
   const resetAll = () => {
     setPhotos([]);
+    setSingleRetakeIndex(null);
     setStep('select');
   };
 
@@ -119,9 +150,9 @@ export default function Photobooth() {
         </div>
         
         <div className="text-white/90 text-xs font-bold bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30">
-          {step === 'select' && "Step 1: Choose Frame"}
-          {step === 'capture' && `Step 2: Take ${currentTheme.totalShots} Shots`}
-          {step === 'preview' && "Step 3: Save Result"}
+          {step === 'select' && "Step 1: Pilih Frame"}
+          {step === 'capture' && (singleRetakeIndex !== null ? `Retake Pose #${singleRetakeIndex + 1}` : `Step 2: Take ${currentTheme.totalShots} Shots`)}
+          {step === 'preview' && "Step 3: Simpan / Retake"}
         </div>
       </header>
 
@@ -184,7 +215,6 @@ export default function Photobooth() {
 
       {step === 'capture' && (
         <div className="flex-1 flex flex-col items-center justify-center gap-4 w-full max-w-5xl mx-auto my-auto">
-          
           {/* Pilihan Filter Real-time */}
           <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/60 shadow-sm">
             <span className="text-[11px] font-extrabold text-sky-900 flex items-center gap-1">
@@ -229,7 +259,7 @@ export default function Photobooth() {
                       {countdown}
                     </span>
                     <span className="text-xs uppercase tracking-widest text-white mt-3 font-extrabold bg-red-500 px-3 py-1 rounded-full shadow">
-                      Pose {currentSlot} / {currentTheme.totalShots}
+                      {singleRetakeIndex !== null ? `Retake Pose ${singleRetakeIndex + 1}` : `Pose ${currentSlot} / ${currentTheme.totalShots}`}
                     </span>
                   </div>
                 )}
@@ -248,13 +278,13 @@ export default function Photobooth() {
               <div className="grid grid-cols-5 lg:grid-cols-2 gap-2">
                 {Array.from({ length: currentTheme.totalShots }).map((_, idx) => {
                   const img = photos[idx];
-                  const isActive = currentSlot === idx + 1;
+                  const isTargetSlot = singleRetakeIndex === idx || currentSlot === idx + 1;
 
                   return (
                     <div
                       key={idx}
                       className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square flex items-center justify-center ${
-                        isActive
+                        isTargetSlot
                           ? "border-amber-400 ring-2 ring-amber-300 bg-amber-50"
                           : img
                           ? "border-white bg-slate-900 shadow-sm"
@@ -280,7 +310,8 @@ export default function Photobooth() {
           <TechStripPreview
             photos={photos}
             selectedTheme={selectedThemeId}
-            onRetake={resetAll}
+            onRetakeAll={resetAll}
+            onRetakeSingle={handleRetakeSingle}
           />
         </div>
       )}
@@ -288,23 +319,48 @@ export default function Photobooth() {
       {step === 'capture' && (
         <footer className="w-full flex flex-col items-center justify-center gap-2 shrink-0 pt-2 pb-2">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setStep('select')}
-              disabled={isCapturing}
-              className="px-5 py-3.5 bg-white text-slate-700 font-bold text-xs uppercase rounded-full shadow border-2 border-slate-200 hover:bg-slate-50 disabled:opacity-50"
-            >
-              Ganti Frame
-            </button>
-            <button
-              onClick={startSession}
-              disabled={isCapturing}
-              className={`px-8 py-3.5 ${currentTheme.btnBg} font-black tracking-wider uppercase text-xs sm:text-sm rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all active:scale-95 flex items-center gap-2.5 border-2 border-white disabled:opacity-50`}
-            >
-              <Camera size={18} />
-              {isCapturing 
-                ? `Capturing Pose ${currentSlot}/${currentTheme.totalShots}...` 
-                : `Mulai Foto (Auto ${currentTheme.totalShots}X)`}
-            </button>
+            {singleRetakeIndex !== null ? (
+              <>
+                <button
+                  onClick={() => {
+                    setSingleRetakeIndex(null);
+                    setStep('preview');
+                  }}
+                  disabled={isCapturing}
+                  className="px-5 py-3.5 bg-white text-slate-700 font-bold text-xs uppercase rounded-full shadow border-2 border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={executeSingleCapture}
+                  disabled={isCapturing}
+                  className="px-8 py-3.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black tracking-wider uppercase text-xs sm:text-sm rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all active:scale-95 flex items-center gap-2.5 border-2 border-white disabled:opacity-50"
+                >
+                  <Camera size={18} />
+                  {isCapturing ? `Mengambil Pose #${singleRetakeIndex + 1}...` : `Jepret Ulang Pose #${singleRetakeIndex + 1}`}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setStep('select')}
+                  disabled={isCapturing}
+                  className="px-5 py-3.5 bg-white text-slate-700 font-bold text-xs uppercase rounded-full shadow border-2 border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Ganti Frame
+                </button>
+                <button
+                  onClick={startSession}
+                  disabled={isCapturing}
+                  className={`px-8 py-3.5 ${currentTheme.btnBg} font-black tracking-wider uppercase text-xs sm:text-sm rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] transition-all active:scale-95 flex items-center gap-2.5 border-2 border-white disabled:opacity-50`}
+                >
+                  <Camera size={18} />
+                  {isCapturing 
+                    ? `Capturing Pose ${currentSlot}/${currentTheme.totalShots}...` 
+                    : `Mulai Foto (Auto ${currentTheme.totalShots}X)`}
+                </button>
+              </>
+            )}
           </div>
         </footer>
       )}
